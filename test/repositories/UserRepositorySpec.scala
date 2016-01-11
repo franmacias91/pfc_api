@@ -3,7 +3,7 @@ package repositories
 
 import models.User
 import org.junit.runner.RunWith
-import org.specs2.mutable.Specification
+import org.specs2.mutable.{BeforeAfter, Specification}
 import org.specs2.runner.JUnitRunner
 import play.api.test.WithApplication
 
@@ -15,12 +15,18 @@ import scala.concurrent.Future
   */
 @RunWith(classOf[JUnitRunner])
 class UserRepositorySpec extends Specification {
+
   "An UserRepository" should {
-    "add users" in new WithApplication{
-      val newUser: Future[User] = UserRepository.create(User(None,"Hector", "Vizcaino", "hektor7", "asd@asd.com"))
+    "add valid users" in new WithApplication{
+      val newUser: Future[User] = UserRepository.create(User(None,"Héctor", "Vizcaíno", "hektor7", "asd@asd.com"))
 
-
-
+      newUser.value must beSome
+      newUser.value.get.isSuccess must beTrue
+      newUser.value.get.get.id must beSome[Long]
+      newUser.value.get.get.name mustEqual "Héctor"
+      newUser.value.get.get.surname mustEqual "Vizcaíno"
+      newUser.value.get.get.username mustEqual "hektor7"
+      newUser.value.get.get.email mustEqual "asd@asd.com"
     }
   }
 }
