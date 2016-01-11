@@ -1,9 +1,9 @@
 package repositories
 
-import models.{Users, User}
-import slick.backend.DatabaseConfig
-import slick.driver.JdbcProfile
-import slick.lifted.TableQuery
+import models.{Users,User}
+import play.api.db.DB
+import play.api.Play.current
+import slick.driver.H2Driver.api._
 
 import scala.concurrent.Future
 
@@ -18,21 +18,15 @@ trait UserRepository {
 object UserRepository extends UserRepository{
 
   val users = TableQuery[Users] //FIXME: Move to User.scala??
-  val dbConfig = DatabaseConfig.forConfig[JdbcProfile]("db.development") //FIXME: Provisionally misplaced
-  val db = dbConfig.db // all database interactions are realised through this object
-  import dbConfig.driver.api._ // imports all the DSL goodies for the configured database
+  private def db: Database = Database.forDataSource(DB.getDataSource()) //FIXME: Misplaced¿?¿?
 
-  override def findAll: Future[Seq[User]] = {
-    try db.run(users.result)
-    finally db.close
+  def findAll: Future[Seq[User]] = {
+    db.run(users.result)
   }
 
   def create(user: User): Future[User] = {
-
-    try db.run((users returning users.map(_.id)
+    db.run((users returning users.map(_.id)
       into ((user,id) => user.copy(id=Some(id)))
-      ) += user) // By default db.run returns an Int value that depicts the number of rows affected
-                 // so this change allow us to return the User entity with the new id
-    finally db.close
+      ) += user)
   }
 }
