@@ -30,6 +30,7 @@ class UserRepositorySpec extends Specification {
     }
   }
 }
+//FIXME: Delete comments
 /*class UserRepository extends FunSuite with BeforeAndAfter with ScalaFutures{
   implicit override val patienceConfig = PatienceConfig(timeout = Span(5, Seconds))
 
