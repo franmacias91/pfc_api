@@ -14,6 +14,9 @@
   -->
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
+  <logger name="repositories" level="DEBUG" />
+  <logger name="controllers" level="DEBUG" />
+  <logger name="models" level="DEBUG"/>
 
   <root level="ERROR">
     <appender-ref ref="STDOUT" />
