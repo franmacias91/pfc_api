@@ -1,11 +1,15 @@
 package repositories
 
 
-import models.User
 import org.junit.runner.RunWith
-import org.specs2.mutable.{BeforeAfter, Specification}
+import models.{Users,User}
+import play.api.db.DB
+import slick.driver.H2Driver.api._
+import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
+import org.specs2.specification.BeforeAfterEach
 import play.api.test.WithApplication
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 
@@ -14,11 +18,40 @@ import scala.concurrent.Future
   * Created by hector on 26/12/15.
   */
 @RunWith(classOf[JUnitRunner])
-class UserRepositorySpec extends Specification {
+class UserRepositorySpec extends Specification with BeforeAfterEach{
+
+  private[this] val logger = org.log4s.getLogger
+
+  def db: Database = Database.forConfig("db.default")
+
+  val users = TableQuery[Users]
+
+  def createSchema() = db.run(users.schema.create)
+  def dropSchema() = db.run(users.schema.drop)
+
+  def before = initializeDatabase()
+
+  def after = cleanUpDatabase()
+
+  def initializeDatabase(): Any = {
+    println("Configuring database...")
+    createSchema()
+  }
+
+  def cleanUpDatabase(): Any = {
+    println("Cleaning up database...")
+    dropSchema()
+  }
+
 
   "An UserRepository" should {
     "add valid users" in new WithApplication{
+
       val newUser: Future[User] = UserRepository.create(User(None,"Héctor", "Vizcaíno", "hektor7", "asd@asd.com"))
+
+      newUser onFailure {
+        case t => logger.error(t)(s"Creating user failed: ${t.getMessage}")
+      }
 
       newUser.value must beSome
       newUser.value.get.isSuccess must beTrue
@@ -28,37 +61,15 @@ class UserRepositorySpec extends Specification {
       newUser.value.get.get.username mustEqual "hektor7"
       newUser.value.get.get.email mustEqual "asd@asd.com"
     }
+
+    "list all users" in new WithApplication{
+      val usersList: Future[Seq[User]] = UserRepository.findAll
+
+      usersList.value must beSome
+      usersList.value.get.isSuccess must beTrue
+
+    }
   }
+
+
 }
-//FIXME: Delete comments
-/*class UserRepository extends FunSuite with BeforeAndAfter with ScalaFutures{
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(5, Seconds))
-
-  val users = TableQuery[Users]
-
-  var db: Database = _
-
-  val userRepository: UserRepository
-
-  def createSchema() = db.run(users.schema.create).futureValue
-
-  //def insertUser(): Long = db.run(users += (1, "Héctor", "Vizcaíno", "hektor7", "xxx@yyy.com")).futureValue
-
-  before { db = Database.forConfig("db.development") }
-
-  test("Creating the Schema works") {
-    createSchema()
-
-    val tables = db.run(MTable.getTables).futureValue
-
-    assert(tables.size == 1)
-    assert(tables.count(_.name.name.equalsIgnoreCase("users")) == 1)
-  }
-
-  test("Create new correct user works"){
-    val newUser = userRepository.create(User(None,"Héctor", "Vizcaino", "hektor7", "xxx@yyy.com"))
-
-    assert(newUser.value.get.name.equalsIgnoreCase("Héctor"))
-
-  }
-}*/
